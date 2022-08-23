@@ -6,11 +6,11 @@ services:
     restart: unless-stopped
     environment:
       GF_INSTALL_PLUGINS: grafana-clock-panel
-    port:
-      - 3000:3000
+    ports:
+    - 3000:3000
     volumes:
-      - ./grafan_files/grafana.ini:/etc/grfana/grafana.ini:ro
-      - grafana-data:/var/lib/grafana
+    - ./files/grafana.ini:/etc/grafana/grafana.ini:ro
+    - grafana-data:/var/lib/grafana
     logging:
       driver: "json-file"
       options:
