@@ -1,20 +1,35 @@
 version: '3.9'
 
+volumes:
+  db-data-kong-postgres: {}
+
+networks:
+  kong-net:
+    driver: bridge
+  # kong-net:
+  #   default:
+  #       external:
+  #           name: kong-net
+
 services:
   cjdjango:
     image: cjdjangoimage:v5
     restart: unless-stopped
-    # volumes:
-    # - ./tutorial_django_1/:/code/
     ports:
       - 8000:8000
+
+  cjflask:
+    image: cjflask:v1
+    container_name: cjflask
+    ports:
+      - 80:80
 
   # 01. SWAGER UI
   swagger:
     image: swaggerapi/swagger-ui
     restart: unless-stopped
     ports:
-    - 80:8080
+    - 800:8080
     volumes:
     - ./doc:/usr/share/nginx/html/doc
     environment:
@@ -31,6 +46,8 @@ services:
       - POSTGRES_PASSWORD=kong
     volumes:
       - "db-data-kong-postgres:/var/lib/postgresql/data"
+    networks:
+      - kong-net
 
   kong-migrations:
     image: kong
@@ -43,6 +60,8 @@ services:
     restart: on-failure
     depends_on:
       - kong-database
+    networks:
+      - kong-net
 
   # 02. KONG
   kong:
@@ -71,6 +90,8 @@ services:
       - kong-database:kong-database
     depends_on:
       - kong-migrations
+    networks:
+      - kong-net
 
   konga:
     image: pantsel/konga
@@ -81,6 +102,8 @@ services:
     container_name: konga
     environment:
       - NODE_ENV=production
+    networks:
+      - kong-net
 
   mongo-db:
     image: mongo:6.0.1
@@ -100,12 +123,3 @@ services:
       ME_CONFIG_MONGODB_ADMINUSERNAME: root
       ME_CONFIG_MONGODB_ADMINPASSWORD: P@ssw0rd
 
-volumes:
-  db-data-kong-postgres: {}
-
-networks:
-  kong-net: {}
-  # kong-net:
-  #   default:
-  #       external:
-  #           name: kong-net
