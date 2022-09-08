@@ -2,21 +2,49 @@ version: '3.9'
 
 volumes:
   db-data-kong-postgres: {}
+  db-data-django-postgres: {}
 
 networks:
   kong-net:
     driver: bridge
-  # kong-net:
-  #   default:
-  #       external:
-  #           name: kong-net
+  django-net:
+    driver: bridge
 
 services:
+  django-database:
+    image: postgres:11
+    container_name: django-database
+    ports:
+      - 4432:5432
+    environment:
+     - POSTGRES_USER=root
+     - POSTGRES_DB=cjdjango
+     - POSTGRES_PASSWORD=P@ssw0rd
+    volumes:
+      - "db-data-django-postgres:/var/lib/postgresql/data"
+    networks:
+      - django-net
+
+  django-migrate:
+    image: cjdjango:v0
+    container_name: django-migrate
+    command: >
+            bash -c : "python ./fc_community/manage.py makemigrations && python ./fc_community/manage.py migrate && echo 'finished'"
+    depends_on: 
+      - django-database
+    networks:
+      - django-net
+
   cjdjango:
-    image: cjdjangoimage:v5
+    image: cjdjango:v1
+    container_name: cj_django
     restart: unless-stopped
     ports:
       - 8000:8000
+    depends_on: 
+      - django-database
+    networks:
+      - django-net
 
   cjflask:
     image: cjflask:v1
@@ -122,4 +150,4 @@ services:
     environment:
       ME_CONFIG_MONGODB_ADMINUSERNAME: root
       ME_CONFIG_MONGODB_ADMINPASSWORD: P@ssw0rd
-
+      ME_CONFIG_MONGODB_URL: mongodb://root:P@ssw0rd@localhost:27017/

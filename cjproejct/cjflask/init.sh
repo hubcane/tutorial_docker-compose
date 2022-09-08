@@ -1,0 +1,1 @@
+docker build -t cjflask:v1 ./
